@@ -1,0 +1,121 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "newVMName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the new vm to be created."
+      }
+    },
+    "newVMSize": {
+      "type": "string"
+    },
+    "projectName": {
+      "type": "string"
+    },
+    "ownerEmail": {
+      "type": "string"
+    },
+    "labName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of an existing lab where the new vm will be created."
+      }
+    },
+    "labSubnetName": {
+      "type": "string"
+    },
+    "sharedImageId": {
+      "type": "string",
+      "metadata": {
+        "description": "The id of an existing custom image which will be used to create the new vm. The specified image must exist in the lab (identified via the 'existingLabName' parameter)."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "userName": {
+      "type": "string"
+    },
+    "password": {
+      "type": "string"
+    },
+    "ms_account_user": {
+      "type": "string"
+    },
+    "ms_account_pw": {
+      "type": "string"
+    },
+    "autoarmProcesses": {
+      "type": "string",
+      "metadata": {
+        "description": "Comma-separated list of processes to automatically arm when provisioning the VM"
+      }
+    }
+  },
+  "variables": {
+    "labSubnetName": "[parameters('labSubnetName')]",
+    "resourceName": "[concat(parameters('labName'), '/', parameters('newVMName'))]",
+    "labVirtualNetworkId": "[resourceId('Microsoft.DevTestLab/labs/virtualnetworks', parameters('labName'), variables('labVirtualNetworkName'))]",
+    "labVirtualNetworkName": "DevTest Lab VNet"
+  },
+  "resources": [
+    {
+      "apiVersion": "2018-10-15-preview",
+      "type": "Microsoft.DevTestLab/labs/virtualmachines",
+      "name": "[variables('resourceName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sharedImageId": "[parameters('sharedImageId')]",
+        "labVirtualNetworkId": "[variables('labVirtualNetworkId')]",
+        "labSubnetName": "[variables('labSubnetName')]",
+        "notes": "presales-demo",
+        "size": "[parameters('newVMSize')]",
+        "userName": "[parameters('userName')]",
+        "password": "[parameters('password')]",
+        "isAuthenticationWithSshKey": false,
+        "storageType": "StandardSSD",
+        "disallowPublicIpAddress": false,
+        "tags": {
+          "Owner": "[parameters('ownerEmail')]",
+          "Project": "[parameters('projectName')]"
+        },
+        "artifacts": [
+          {
+            "artifactId": "[resourceId('Microsoft.DevTestLab/labs/artifactSources/artifacts', parameters('labName'), 'UiPathArtifacts', 'configure')]",
+            "parameters": [
+              {
+                "name": "ms_account_user",
+                "value": "[parameters('ms_account_user')]"
+              },
+              {
+                "name": "ms_account_pw",
+                "value": "[parameters('ms_account_pw')]"
+              },
+              {
+                "name": "password",
+                "value": "[parameters('password')]"
+              },
+              {
+                "name": "username",
+                "value": "[parameters('username')]"
+              },
+              {
+                "name": "autoarm_processes",
+                "value": "[parameters('autoarmProcesses')]"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "vmId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.DevTestLab/labs/virtualMachines', parameters('labName'), parameters('newVMName'))]"
+    }
+  }
+}
